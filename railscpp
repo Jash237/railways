@@ -1,0 +1,255 @@
+Project Code:
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+struct Train {
+    int train_no;
+    char train_name[50];
+    char timing[20];
+    struct Train* next;
+};
+
+struct Train* front = NULL;
+struct Train* rear = NULL;
+
+void addTrain(int no, char name[], char time[]) {
+    struct Train* temp = (struct Train*)malloc(sizeof(struct Train));
+    temp->train_no = no;
+    strcpy(temp->train_name, name);
+    strcpy(temp->timing, time);
+    temp->next = NULL;
+
+    if (rear == NULL)
+        front = rear = temp;
+    else {
+        rear->next = temp;
+        rear = temp;
+    }
+}
+
+void displayTrains() {
+    struct Train* temp = front;
+    printf("\n AVAILABLE TRAINS\n");
+    while (temp != NULL) {
+        printf("%d - %s (%s)\n", temp->train_no, temp->train_name, temp->timing);
+        temp = temp->next;
+    }
+}
+
+
+
+struct Passenger {
+    char name[50];
+    int age;
+    char gender[10];
+    char mobile[15];
+    char email[50];
+    struct Passenger* next;
+};
+
+struct Passenger* head = NULL;
+
+void addPassenger() {
+    struct Passenger* temp = (struct Passenger*)malloc(sizeof(struct Passenger));
+
+    printf("Name: ");
+    scanf(" %[^\n]", temp->name);
+
+    printf("Age: ");
+    scanf("%d", &temp->age);
+
+    printf("Gender: ");
+    scanf("%s", temp->gender);
+
+    printf("Mobile: ");
+    scanf("%s", temp->mobile);
+
+    printf("Email: ");
+    scanf("%s", temp->email);
+
+    temp->next = NULL;
+
+    if (head == NULL)
+        head = temp;
+    else {
+        struct Passenger* p = head;
+        while (p->next != NULL)
+            p = p->next;
+        p->next = temp;
+    }
+}
+
+void displayPassengers() {
+    struct Passenger* temp = head;
+    while (temp != NULL) {
+        printf("Name: %s | Age: %d | Gender: %s\n",
+               temp->name, temp->age, temp->gender);
+        temp = temp->next;
+    }
+}
+
+void freePassengers() {
+    struct Passenger* temp;
+    while (head != NULL) {
+        temp = head;
+        head = head->next;
+        free(temp);
+    }
+}
+
+
+
+struct Seat {
+    char class[20];
+    int available;
+    float price;
+};
+
+struct Seat seats[] = {
+    {"Sleeper", 100, 500},
+    {"3AC Economy", 60, 800},
+    {"3AC", 50, 1200},
+    {"2AC", 30, 2000},
+    {"1AC", 10, 3500}
+};
+
+int selectClass() {
+    int choice,i;
+    printf("\nSelect Class:\n");
+    for ( i = 0; i < 5; i++)
+        printf("%d. %s (Seats: %d, Price: %.0f)\n",
+               i + 1, seats[i].class, seats[i].available, seats[i].price);
+
+    printf("Enter choice: ");
+    scanf("%d", &choice);
+
+    if (choice < 1 || choice > 5)
+        return -1;
+
+    return choice - 1;
+}
+
+
+
+struct Payment {
+    float amount;
+    struct Payment* next;
+};
+
+struct Payment* top = NULL;
+
+void pushPayment(float amount) {
+    struct Payment* temp = (struct Payment*)malloc(sizeof(struct Payment));
+    temp->amount = amount;
+    temp->next = top;
+    top = temp;
+}
+
+
+
+long generatePNR(int train_no) {
+    static int counter = 1;
+    return train_no * 100000 + (rand() % 10000) + counter++;
+}
+
+
+
+void booking() {
+    char date[20], from[50], to[50];
+    int train_no, n,i;
+
+    freePassengers();
+
+    printf("Date (DD/MM/YYYY): ");
+    scanf("%s", date);
+
+    printf("From: ");
+    scanf("%s", from);
+
+    printf("To: ");
+    scanf("%s", to);
+
+    displayTrains();
+
+    printf("Enter Train No: ");
+    scanf("%d", &train_no);
+
+    int classIndex = selectClass();
+    if (classIndex == -1) {
+        printf("Invalid class!\n");
+        return;
+    }
+
+    printf("Number of Tickets: ");
+    scanf("%d", &n);
+
+    if (seats[classIndex].available < n) {
+        printf("? Not enough seats!\n");
+        return;
+    }
+
+    for ( i = 0; i < n; i++) {
+        printf("\nPassenger %d:\n", i + 1);
+        addPassenger();
+    }
+
+    float total = seats[classIndex].price * n;
+
+    printf("\nTotal Amount: %.2f\n", total);
+
+    int confirm;
+    printf("Confirm Payment? (1-Yes): ");
+    scanf("%d", &confirm);
+
+    if (confirm == 1) {
+        pushPayment(total);
+        seats[classIndex].available -= n;
+
+        long pnr = generatePNR(train_no);
+
+        printf("\nTICKET\n");
+        printf("PNR: %ld\n", pnr);
+        printf("Train: %d\n", train_no);
+        printf("Route: %s -> %s\n", from, to);
+        printf("Date: %s\n", date);
+        printf("Class: %s\n", seats[classIndex].class);
+
+        displayPassengers();
+
+        printf("Seats Left: %d\n", seats[classIndex].available);
+    } else {
+        printf("Booking Cancelled\n");
+    }
+}
+
+
+
+int main() {
+    srand(time(NULL));
+
+    addTrain(101, "Express A", "10:00 AM");
+    addTrain(102, "Express B", "02:00 PM");
+    addTrain(103, "Superfast C", "08:00 PM");
+
+    int choice;
+
+    while (1) {
+        printf("\n MENU \n");
+        printf("1. Book Ticket\n");
+        printf("2. Exit\n");
+        printf("Choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                booking();
+                break;
+            case 2:
+                exit(0);
+            default:
+                printf("Invalid choice!\n");
+        }
+    }
+}
